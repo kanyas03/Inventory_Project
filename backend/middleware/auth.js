@@ -38,7 +38,7 @@ const secretkey=process.env.SECRET_KEY
 
 const authenticate=(req,res,next)=>{
    const cookies= req.headers.cookie;
-    // req.cookies
+    
     console.log(cookies)
     const cookie=cookies.split(';');
     if(!cookie){

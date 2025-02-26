@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 
 dotenv.config();
 const app =express();
-app.use(json()) 
+app.use(json())         
 app.use('/',userauth);
 app.use('/',adminauth);
 
