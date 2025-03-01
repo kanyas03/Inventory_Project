@@ -5,6 +5,7 @@ import { user } from "../model/User.js";
 import authenticate from "../middleware/auth.js";
 import usercheck from "../middleware/usercheck.js";
 import {placeorder} from "../model/order.js";
+import { addProduct } from "../model/addproduct.js";
 
 
 
@@ -56,7 +57,7 @@ userauth.post('/login',async(req,res)=>{
             
             console.log(valid);
             if(valid){
-                const token= jwt.sign({ _id:result._id,userName:UserName,userRole:result.userRole},process.env.SECRET_KEY,{expiresIn:'2hr'});
+                const token= jwt.sign({ userId:result._id,userName:UserName,userRole:result.userRole},process.env.SECRET_KEY,{expiresIn:'2hr'});
                 console.log(token);
                 
                 
@@ -102,36 +103,95 @@ userauth.get('/viewProfile',authenticate,usercheck,async(req,res)=>{
 })
 
 
-
 userauth.post('/placeorder', authenticate, usercheck, async (req, res) => {
     try {
-      const { ProductName, ProductId, Quantity } = req.body;
+        const { ProductId, Quantity } = req.body;
 
-      const userId = await user.findOne(req._id) ; // Assuming the user's ID is available after authentication
-      console.log(userId);
-  
-      // Check if the product already exists in the order
-      const existingOrder = await placeorder.findOne({ p_Id: ProductId });
-      if (existingOrder) {
-        return res.status(400).send("Order already exists");
-      }
-  
-      // Create a new order and associate the userId
-      const newOrder = new placeorder({
-        p_Id: ProductId,
-        p_Name: ProductName,
-        p_quantity: Quantity,
-        userId: userId // Link the user who placed the order
-      });
-      await newOrder.save();
-      res.status(201).send("Order added");
-      console.log(newOrder);
+        // Validate input
+        if (!ProductId || !Quantity || Quantity <= 0) {
+            return res.status(400).json({ error: "Invalid ProductId or Quantity" });
+        }
+
+        // Find the product
+        const product = await addProduct.findOne({ p_Id: ProductId });
+
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        // Check if enough stock is available
+        if (product.p_quantity < Quantity) {
+            return res.status(400).json({ error: `Insufficient stock. Available: ${product.p_quantity}` });
+        }
+
+        // Deduct stock
+        product.p_quantity -= Quantity;
+        await product.save();
+
+        // Create new order
+        const newOrder = new placeorder({
+            p_Id: ProductId,
+            p_Name: product.p_Name,
+            p_quantity: Quantity,
+            userId: req.userId // This is set by the `authenticate` middleware
+        });
+
+        await newOrder.save();
+
+        // Respond with success message and remaining stock
+        res.status(201).json({ 
+            message: "Order placed successfully", 
+            order: newOrder, 
+            remainingStock: product.p_quantity 
+        });
+
     } catch (error) {
-      console.error("Error occurred:", error);
-      res.status(500).send("Internal Server Error");
-    } 
-  });
+        console.error("Error occurred:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
+// userauth.post('/placeorder', authenticate, usercheck, async (req, res) => {
+//     try {
+//         const { ProductId, Quantity } = req.body;
+
+//         if (!ProductId || !Quantity || Quantity <= 0) {
+//             return res.status(400).json({ error: "Invalid ProductId or Quantity" });
+//         }
+
+//         const product = await addProduct.findOne({ p_Id: ProductId });
+
+//         if (!product) {
+//             return res.status(404).json({ error: "Product not found" });
+//         }
+
+//         if (product.p_quantity < Quantity) {
+//             return res.status(400).json({ error: `Insufficient stock. Available: ${product.p_quantity}` });
+//         }
+
+//         product.p_quantity -= Quantity;
+//         await product.save();
+
+//         const newOrder = new placeorder({
+//             p_Id: ProductId,
+//             p_Name: product.p_Name,
+//             p_quantity: Quantity,
+//             userId: req.userId // This is set by the `authenticate` middleware automatically
+//         });
+
+//         await newOrder.save();
+
+//         res.status(201).json({ message: "Order placed successfully", order: newOrder, remainingStock: product.p_quantity });
+
+//     } catch (error) {
+//         console.error("Error occurred:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// });
+
   
+
 
 
   userauth.delete('/deleteOrder',authenticate,usercheck,async(req,res)=>{

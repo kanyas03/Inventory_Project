@@ -51,7 +51,7 @@ const authenticate=(req,res,next)=>{
             console.log(verified)
             console.log(verified.userName)
             console.log(verified.userRole)
-            req.userId=verified._id;
+            req.userId = verified.userId;
             req.username=verified.userName;
             req.userrole=verified.userRole;
             break;
