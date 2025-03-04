@@ -4,12 +4,34 @@ import admincheck from "../middleware/admincheck.js";
 import { addProduct } from "../model/addproduct.js";
 import { placeorder } from "../model/order.js";
 import upload from "../middleware/upload.js";
+import { user } from "../model/User.js";
 
 const adminauth=Router();
 
 const convertToBase64 = (buffer) => {
     return buffer.toString("base64");
 };
+
+adminauth.get('/users', authenticate, admincheck, async (req, res) => {
+    try {
+        // Fetch all user details except passwords
+        const users = await user.find({}, { password: 0 });
+
+        if (!users.length) {
+            return res.status(404).json({ message: "No users found" });
+        }
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
+
+
+
 
 adminauth.post('/addproduct',authenticate,admincheck,upload.single("Product_img"),async(req,res)=>{   //authentication is amiddleware
     try{    console.log("hii")

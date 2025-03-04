@@ -152,43 +152,6 @@ userauth.post('/placeorder', authenticate, usercheck, async (req, res) => {
 });
 
 
-// userauth.post('/placeorder', authenticate, usercheck, async (req, res) => {
-//     try {
-//         const { ProductId, Quantity } = req.body;
-
-//         if (!ProductId || !Quantity || Quantity <= 0) {
-//             return res.status(400).json({ error: "Invalid ProductId or Quantity" });
-//         }
-
-//         const product = await addProduct.findOne({ p_Id: ProductId });
-
-//         if (!product) {
-//             return res.status(404).json({ error: "Product not found" });
-//         }
-
-//         if (product.p_quantity < Quantity) {
-//             return res.status(400).json({ error: `Insufficient stock. Available: ${product.p_quantity}` });
-//         }
-
-//         product.p_quantity -= Quantity;
-//         await product.save();
-
-//         const newOrder = new placeorder({
-//             p_Id: ProductId,
-//             p_Name: product.p_Name,
-//             p_quantity: Quantity,
-//             userId: req.userId // This is set by the `authenticate` middleware automatically
-//         });
-
-//         await newOrder.save();
-
-//         res.status(201).json({ message: "Order placed successfully", order: newOrder, remainingStock: product.p_quantity });
-
-//     } catch (error) {
-//         console.error("Error occurred:", error);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// });
 
   
 
